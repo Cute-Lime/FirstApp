@@ -4,7 +4,7 @@ import UIKit
 
 enum GameFont {
     static func registerFonts() {
-        let fontFiles = ["Cinzel-Regular.ttf", "Cinzel-Bold.ttf", "Cinzel-Black.ttf"]
+        let fontFiles = ["Cinzel-Regular.ttf", "Cinzel-Bold.ttf", "Cinzel-Black.ttf", "ToneOZ-Tsuipita-TC.ttf"]
         for file in fontFiles {
             let name = (file as NSString).deletingPathExtension
             let ext = (file as NSString).pathExtension
@@ -16,32 +16,29 @@ enum GameFont {
         }
     }
 
-    private static func fontWithSerifFallback(name: String, weight: UIFont.Weight, size: CGFloat) -> Font {
+    private static func fontWithFallback(name: String, weight: UIFont.Weight, size: CGFloat) -> Font {
         let baseFont = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size, weight: weight)
-        if let serifDescriptor = UIFont.systemFont(ofSize: size, weight: weight).fontDescriptor.withDesign(.serif) {
-            let serifFont = UIFont(descriptor: serifDescriptor, size: size)
-            let cascadedDescriptor = baseFont.fontDescriptor.addingAttributes([
-                .cascadeList: [serifFont.fontDescriptor]
-            ])
-            let combinedUIFont = UIFont(descriptor: cascadedDescriptor, size: size)
-            return Font(combinedUIFont)
-        }
-        return Font(baseFont)
+        let customChineseFont = UIFont(name: "ToneOZ-Tsuipita-TC", size: size) ?? UIFont.systemFont(ofSize: size, weight: weight)
+        let cascadedDescriptor = baseFont.fontDescriptor.addingAttributes([
+            .cascadeList: [customChineseFont.fontDescriptor]
+        ])
+        let combinedUIFont = UIFont(descriptor: cascadedDescriptor, size: size)
+        return Font(combinedUIFont)
     }
 
     static func title(_ size: CGFloat) -> Font {
-        fontWithSerifFallback(name: "Cinzel-Black", weight: .black, size: size)
+        fontWithFallback(name: "Cinzel-Black", weight: .black, size: size)
     }
 
     static func display(_ size: CGFloat) -> Font {
-        fontWithSerifFallback(name: "Cinzel-Bold", weight: .bold, size: size)
+        fontWithFallback(name: "Cinzel-Bold", weight: .bold, size: size)
     }
 
     static func number(_ size: CGFloat) -> Font {
-        fontWithSerifFallback(name: "Cinzel-Regular", weight: .regular, size: size)
+        fontWithFallback(name: "Cinzel-Regular", weight: .regular, size: size)
     }
 
     static func body(_ size: CGFloat) -> Font {
-        fontWithSerifFallback(name: "Cinzel-Regular", weight: .regular, size: size)
+        fontWithFallback(name: "Cinzel-Regular", weight: .regular, size: size)
     }
 }
