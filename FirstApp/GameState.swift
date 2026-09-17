@@ -25,9 +25,17 @@ enum UnitType: String, CaseIterable, Identifiable {
         }
     }
 
+    var iconText: String {
+        switch self {
+        case .knight: "🗡️"
+        case .archer: "🏹"
+        case .guardian: "🛡️"
+        }
+    }
+
     var symbolName: String {
         switch self {
-        case .knight: "figure.knight"
+        case .knight: "🗡️"
         case .archer: "scope"
         case .guardian: "shield.fill"
         }

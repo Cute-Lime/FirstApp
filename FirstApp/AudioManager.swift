@@ -14,22 +14,34 @@ final class AudioManager {
     static let shared = AudioManager()
 
     private var backgroundPlayer: AVAudioPlayer?
-    private var effectPlayers: [GameSound: AVAudioPlayer] = [:]
+    private var activeEffectPlayers: [AVAudioPlayer] = []
 
     private init() {}
 
     func startBattleMusic() {
         configureSession()
-        guard backgroundPlayer == nil,
-              let url = Bundle.main.url(forResource: "battle_theme", withExtension: "mp3") ?? Bundle.main.url(forResource: "battle_theme", withExtension: "mp3", subdirectory: "Audio") else {
+        if let player = backgroundPlayer {
+            if !player.isPlaying {
+                player.play()
+            }
             return
         }
 
-        backgroundPlayer = try? AVAudioPlayer(contentsOf: url)
-        backgroundPlayer?.numberOfLoops = -1
-        backgroundPlayer?.volume = 0.32
-        backgroundPlayer?.prepareToPlay()
-        backgroundPlayer?.play()
+        guard let url = Bundle.main.url(forResource: "battle_theme", withExtension: "mp3") ??
+                        Bundle.main.url(forResource: "battle_theme", withExtension: "mp3", subdirectory: "Audio") else {
+            return
+        }
+
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.numberOfLoops = -1
+            player.volume = 0.35
+            player.prepareToPlay()
+            player.play()
+            backgroundPlayer = player
+        } catch {
+            print("Failed to start battle music: \(error)")
+        }
     }
 
     func pauseBattleMusic() {
@@ -47,19 +59,33 @@ final class AudioManager {
 
     func play(_ sound: GameSound) {
         configureSession()
-        guard let url = Bundle.main.url(forResource: sound.rawValue, withExtension: "wav") ?? Bundle.main.url(forResource: sound.rawValue, withExtension: "wav", subdirectory: "Audio") else {
+        guard let url = Bundle.main.url(forResource: sound.rawValue, withExtension: "wav") ??
+                        Bundle.main.url(forResource: sound.rawValue, withExtension: "wav", subdirectory: "Audio") else {
             return
         }
 
-        let player = try? AVAudioPlayer(contentsOf: url)
-        player?.volume = 0.7
-        player?.prepareToPlay()
-        player?.play()
-        effectPlayers[sound] = player
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.volume = 0.8
+            player.prepareToPlay()
+            player.play()
+            
+            // Retain player until playback finishes
+            activeEffectPlayers.append(player)
+            // Clean up finished players
+            activeEffectPlayers.removeAll { !$0.isPlaying }
+        } catch {
+            print("Failed to play sound \(sound.rawValue): \(error)")
+        }
     }
 
     private func configureSession() {
-        try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
-        try? AVAudioSession.sharedInstance().setActive(true)
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try session.setActive(true)
+        } catch {
+            print("Failed to configure AVAudioSession: \(error)")
+        }
     }
 }

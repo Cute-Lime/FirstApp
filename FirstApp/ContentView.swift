@@ -68,42 +68,119 @@ private struct HomeView: View {
 
     var body: some View {
         ZStack {
+            // Medieval Dark Fortress Background
             LinearGradient(
-                colors: [Color(red: 0.07, green: 0.17, blue: 0.29), Color(red: 0.18, green: 0.43, blue: 0.42)],
-                startPoint: .top,
-                endPoint: .bottom
+                colors: [
+                    Color(red: 0.06, green: 0.08, blue: 0.12),
+                    Color(red: 0.22, green: 0.11, blue: 0.09),
+                    Color(red: 0.05, green: 0.06, blue: 0.09)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 28) {
+            // Subtle Golden Glow Halo
+            Circle()
+                .fill(Color(red: 0.95, green: 0.70, blue: 0.25).opacity(0.12))
+                .frame(width: 320, height: 320)
+                .blur(radius: 50)
+                .offset(y: -40)
+
+            VStack(spacing: 24) {
                 Spacer()
 
-                Image(systemName: "shield.lefthalf.filled.trianglebadge.exclamationmark")
-                    .font(.system(size: 76))
-                    .foregroundStyle(.yellow, .white)
-                    .symbolEffect(.pulse.byLayer, options: .repeating)
+                // Medieval Castle Crest Emblem
+                ZStack {
+                    Circle()
+                        .fill(Color(red: 0.15, green: 0.12, blue: 0.10))
+                        .frame(width: 120, height: 120)
+                        .overlay(
+                            Circle()
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [Color(red: 0.95, green: 0.82, blue: 0.45), Color(red: 0.65, green: 0.48, blue: 0.20)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 4
+                                )
+                        )
+                        .shadow(color: .orange.opacity(0.3), radius: 12)
 
-                VStack(spacing: 8) {
-                    Text("Tower Defence")
-                        .font(GameFont.title(46))
-                        .multilineTextAlignment(.center)
-                    Text("騎士大戰魔物")
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(.yellow)
+                    VStack(spacing: -6) {
+                        Image(systemName: "crown.fill")
+                            .font(.system(size: 28))
+                            .foregroundStyle(Color(red: 0.98, green: 0.84, blue: 0.38))
+                        Image(systemName: "shield.fill")
+                            .font(.system(size: 42))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [Color(red: 0.75, green: 0.20, blue: 0.15), Color(red: 0.45, green: 0.10, blue: 0.08)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                    }
                 }
 
-                Text("召喚勇士、守住城堡，擊敗魔物軍團！")
-                    .font(.headline)
-                    .foregroundStyle(.white.opacity(0.85))
+                VStack(spacing: 6) {
+                    Text("TOWER DEFENCE")
+                        .font(GameFont.title(44))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color(red: 0.98, green: 0.88, blue: 0.55), Color(red: 0.82, green: 0.65, blue: 0.30)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 3)
 
-                Button(action: startGame) {
-                    Label("開始遊戲", systemImage: "play.fill")
-                        .font(.title3.bold())
-                        .frame(minWidth: 210)
-                        .padding(.vertical, 15)
+                    Text("中世紀城堡爭霸戰")
+                        .font(GameFont.display(22))
+                        .foregroundStyle(Color(red: 0.95, green: 0.78, blue: 0.35))
+
+                    Text("領兵築防 • 決戰魔王")
+                        .font(GameFont.body(15))
+                        .foregroundStyle(.white.opacity(0.78))
+                        .padding(.top, 2)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
+
+                Button(action: {
+                    AudioManager.shared.play(.buttonTap)
+                    startGame()
+                }) {
+                    HStack(spacing: 10) {
+                        Text("🗡️")
+                            .font(.title2)
+                        Text("開始遠征")
+                            .font(GameFont.display(20))
+                    }
+                    .foregroundStyle(Color(red: 0.98, green: 0.92, blue: 0.70))
+                    .frame(minWidth: 220)
+                    .padding(.vertical, 14)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(red: 0.68, green: 0.22, blue: 0.15), Color(red: 0.45, green: 0.12, blue: 0.08)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        in: RoundedRectangle(cornerRadius: 14)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color(red: 0.95, green: 0.82, blue: 0.45), Color(red: 0.65, green: 0.48, blue: 0.20)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 2
+                            )
+                    )
+                    .shadow(color: Color.orange.opacity(0.35), radius: 10, x: 0, y: 4)
+                }
+                .buttonStyle(.plain)
                 .accessibilityHint("開始一場新的塔防戰鬥")
 
                 Spacer()
@@ -134,8 +211,6 @@ private struct BattleView: View {
 
             VStack(spacing: 0) {
                 BattleHeader(
-                    playerHealth: gameState.playerCastleHealth,
-                    enemyHealth: gameState.enemyCastleHealth,
                     money: gameState.playerMoney,
                     isPaused: gameState.isPaused,
                     togglePause: togglePause
@@ -155,59 +230,68 @@ private struct BattleView: View {
             .padding(.bottom, 4)
 
             if gameState.isPaused && !gameState.isFinished {
-                PauseOverlay(resume: { gameState.isPaused = false }, returnHome: returnHome)
+                PauseOverlay(
+                    resume: {
+                        AudioManager.shared.play(.buttonTap)
+                        gameState.isPaused = false
+                    },
+                    returnHome: {
+                        AudioManager.shared.play(.buttonTap)
+                        returnHome()
+                    }
+                )
             }
 
             if let result = gameState.result {
-                ResultOverlay(result: result, restart: restart, returnHome: returnHome)
+                ResultOverlay(
+                    result: result,
+                    restart: {
+                        AudioManager.shared.play(.buttonTap)
+                        restart()
+                    },
+                    returnHome: {
+                        AudioManager.shared.play(.buttonTap)
+                        returnHome()
+                    }
+                )
             }
         }
     }
 }
 
 private struct BattleHeader: View {
-    let playerHealth: CGFloat
-    let enemyHealth: CGFloat
     let money: Int
     let isPaused: Bool
     let togglePause: () -> Void
 
     var body: some View {
-        HStack(spacing: 16) {
-            CastleHealthView(title: "我方城堡", health: playerHealth, tint: .blue)
+        HStack(spacing: 12) {
             MoneyBadge(money: money)
-            CastleHealthView(title: "魔物城堡", health: enemyHealth, tint: .red)
 
-            Button(action: togglePause) {
+            Button(action: {
+                AudioManager.shared.play(.buttonTap)
+                togglePause()
+            }) {
                 Image(systemName: isPaused ? "play.fill" : "pause.fill")
-                    .font(.headline)
+                    .font(.title3.bold())
+                    .foregroundStyle(Color(red: 0.95, green: 0.85, blue: 0.55))
                     .frame(width: 44, height: 44)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(red: 0.22, green: 0.18, blue: 0.15), Color(red: 0.12, green: 0.10, blue: 0.08)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        in: RoundedRectangle(cornerRadius: 12)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color(red: 0.75, green: 0.60, blue: 0.32), lineWidth: 1.5)
+                    )
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.black.opacity(0.55))
+            .buttonStyle(.plain)
             .accessibilityLabel(isPaused ? "繼續遊戲" : "暫停遊戲")
         }
-    }
-}
-
-private struct CastleHealthView: View {
-    let title: String
-    let health: CGFloat
-    let tint: Color
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(title)
-                .font(.caption.bold())
-            ProgressView(value: health, total: 1_500)
-                .tint(tint)
-                .frame(minWidth: 120)
-            Text("\(Int(health)) / 1500")
-                .font(.caption2.monospacedDigit())
-        }
-        .foregroundStyle(.white)
-        .padding(9)
-        .background(.black.opacity(0.52), in: RoundedRectangle(cornerRadius: 12))
     }
 }
 
@@ -216,11 +300,22 @@ private struct MoneyBadge: View {
 
     var body: some View {
         Label("\(money)", systemImage: "centsign.circle.fill")
-            .font(.title3.bold().monospacedDigit())
-            .foregroundStyle(.yellow)
-            .padding(.horizontal, 12)
+            .font(GameFont.number(20))
+            .foregroundStyle(Color(red: 0.98, green: 0.86, blue: 0.40))
+            .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(.black.opacity(0.55), in: Capsule())
+            .background(
+                LinearGradient(
+                    colors: [Color(red: 0.20, green: 0.16, blue: 0.12), Color(red: 0.10, green: 0.08, blue: 0.06)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ),
+                in: Capsule()
+            )
+            .overlay(
+                Capsule()
+                    .stroke(Color(red: 0.75, green: 0.60, blue: 0.32), lineWidth: 1.5)
+            )
             .accessibilityLabel("金錢 \(money)")
     }
 }
@@ -235,6 +330,7 @@ private struct SummonBar: View {
         HStack(spacing: 12) {
             ForEach(UnitType.allCases) { type in
                 Button {
+                    AudioManager.shared.play(.buttonTap)
                     summon(type)
                 } label: {
                     SummonButtonLabel(type: type, isAffordable: availableMoney >= type.cost)
@@ -245,7 +341,18 @@ private struct SummonBar: View {
             }
         }
         .padding(10)
-        .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 20))
+        .background(
+            LinearGradient(
+                colors: [Color(red: 0.16, green: 0.14, blue: 0.12), Color(red: 0.08, green: 0.07, blue: 0.06)],
+                startPoint: .top,
+                endPoint: .bottom
+            ),
+            in: RoundedRectangle(cornerRadius: 18)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color(red: 0.65, green: 0.50, blue: 0.28), lineWidth: 1.5)
+        )
     }
 }
 
@@ -255,17 +362,37 @@ private struct SummonButtonLabel: View {
 
     var body: some View {
         VStack(spacing: 5) {
-            Image(systemName: type.symbolName)
+            Text(type.iconText)
                 .font(.title2)
             Text(type.name)
-                .font(.caption.bold())
+                .font(GameFont.display(14))
             Label("\(type.cost)", systemImage: "centsign.circle.fill")
-                .font(.caption2.monospacedDigit())
+                .font(GameFont.number(13))
         }
-        .foregroundStyle(isAffordable ? .white : .white.opacity(0.38))
+        .foregroundStyle(isAffordable ? Color(red: 0.98, green: 0.92, blue: 0.75) : Color.white.opacity(0.35))
         .frame(minWidth: 108)
         .padding(.vertical, 8)
-        .background(isAffordable ? Color.blue.opacity(0.7) : Color.gray.opacity(0.45), in: RoundedRectangle(cornerRadius: 13))
+        .background(
+            isAffordable ?
+            LinearGradient(
+                colors: [Color(red: 0.22, green: 0.38, blue: 0.62), Color(red: 0.12, green: 0.24, blue: 0.42)],
+                startPoint: .top,
+                endPoint: .bottom
+            ) :
+            LinearGradient(
+                colors: [Color(red: 0.20, green: 0.20, blue: 0.20), Color(red: 0.12, green: 0.12, blue: 0.12)],
+                startPoint: .top,
+                endPoint: .bottom
+            ),
+            in: RoundedRectangle(cornerRadius: 12)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(
+                    isAffordable ? Color(red: 0.85, green: 0.72, blue: 0.42) : Color.gray.opacity(0.3),
+                    lineWidth: 1
+                )
+        )
     }
 }
 
@@ -274,19 +401,53 @@ private struct PauseOverlay: View {
     let returnHome: () -> Void
 
     var body: some View {
-        Color.black.opacity(0.56)
+        Color.black.opacity(0.65)
             .ignoresSafeArea()
             .overlay {
-                VStack(spacing: 18) {
+                VStack(spacing: 20) {
                     Text("遊戲暫停")
-                        .font(.largeTitle.bold())
-                    Button("繼續") { resume() }
-                        .buttonStyle(.borderedProminent)
-                    Button("返回主頁") { returnHome() }
-                        .buttonStyle(.bordered)
+                        .font(GameFont.title(36))
+                        .foregroundStyle(Color(red: 0.98, green: 0.88, blue: 0.55))
+
+                    Button(action: resume) {
+                        Text("繼續戰鬥")
+                            .font(GameFont.display(18))
+                            .foregroundStyle(Color(red: 0.98, green: 0.92, blue: 0.70))
+                            .frame(minWidth: 160)
+                            .padding(.vertical, 10)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color(red: 0.68, green: 0.22, blue: 0.15), Color(red: 0.45, green: 0.12, blue: 0.08)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                in: RoundedRectangle(cornerRadius: 10)
+                            )
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(red: 0.85, green: 0.72, blue: 0.42), lineWidth: 1.5))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button(action: returnHome) {
+                        Text("返回主頁")
+                            .font(GameFont.display(18))
+                            .foregroundStyle(.white.opacity(0.85))
+                            .frame(minWidth: 160)
+                            .padding(.vertical, 10)
+                            .background(Color.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 10))
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.5), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .padding(34)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
+                .padding(36)
+                .background(
+                    LinearGradient(
+                        colors: [Color(red: 0.16, green: 0.13, blue: 0.11), Color(red: 0.09, green: 0.07, blue: 0.06)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    in: RoundedRectangle(cornerRadius: 22)
+                )
+                .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color(red: 0.75, green: 0.60, blue: 0.32), lineWidth: 2))
             }
     }
 }
@@ -297,29 +458,62 @@ private struct ResultOverlay: View {
     let returnHome: () -> Void
 
     var body: some View {
-        Color.black.opacity(0.62)
+        Color.black.opacity(0.70)
             .ignoresSafeArea()
             .overlay {
-                VStack(spacing: 16) {
+                VStack(spacing: 18) {
                     Image(systemName: result == .victory ? "crown.fill" : "shield.slash.fill")
-                        .font(.system(size: 54))
-                        .foregroundStyle(result == .victory ? .yellow : .red)
+                        .font(.system(size: 58))
+                        .foregroundStyle(result == .victory ? Color(red: 0.98, green: 0.84, blue: 0.38) : Color.red)
                     Text(result.title)
-                        .font(GameFont.title(48))
+                        .font(GameFont.title(46))
+                        .foregroundStyle(result == .victory ? Color(red: 0.98, green: 0.88, blue: 0.55) : Color(red: 0.90, green: 0.35, blue: 0.35))
                     Text(result.detail)
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
+                        .font(GameFont.body(16))
+                        .foregroundStyle(.white.opacity(0.8))
 
-                    HStack {
-                        Button("再玩一次") { restart() }
-                            .buttonStyle(.borderedProminent)
-                        Button("返回主頁") { returnHome() }
-                            .buttonStyle(.bordered)
+                    HStack(spacing: 16) {
+                        Button(action: restart) {
+                            Text("再玩一次")
+                                .font(GameFont.display(18))
+                                .foregroundStyle(Color(red: 0.98, green: 0.92, blue: 0.70))
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color(red: 0.68, green: 0.22, blue: 0.15), Color(red: 0.45, green: 0.12, blue: 0.08)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    in: RoundedRectangle(cornerRadius: 10)
+                                )
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(red: 0.85, green: 0.72, blue: 0.42), lineWidth: 1.5))
+                        }
+                        .buttonStyle(.plain)
+
+                        Button(action: returnHome) {
+                            Text("返回主頁")
+                                .font(GameFont.display(18))
+                                .foregroundStyle(.white.opacity(0.85))
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(Color.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 10))
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.5), lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .multilineTextAlignment(.center)
-                .padding(34)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
+                .padding(36)
+                .background(
+                    LinearGradient(
+                        colors: [Color(red: 0.16, green: 0.13, blue: 0.11), Color(red: 0.09, green: 0.07, blue: 0.06)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    in: RoundedRectangle(cornerRadius: 22)
+                )
+                .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color(red: 0.75, green: 0.60, blue: 0.32), lineWidth: 2))
                 .accessibilityElement(children: .contain)
             }
     }

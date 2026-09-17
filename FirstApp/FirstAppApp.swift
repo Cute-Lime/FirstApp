@@ -14,6 +14,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 struct FirstAppApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
+    init() {
+        GameFont.registerFonts()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
