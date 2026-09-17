@@ -1,14 +1,19 @@
-//
-//  FirstAppApp.swift
-//  FirstApp
-//
-//  Created by 林彥宇 on 2026/9/13.
-//
-
 import SwiftUI
+import UIKit
+
+final class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        supportedInterfaceOrientationsFor window: UIWindow?
+    ) -> UIInterfaceOrientationMask {
+        .landscape
+    }
+}
 
 @main
 struct FirstAppApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     var body: some Scene {
         WindowGroup {
             ContentView()
