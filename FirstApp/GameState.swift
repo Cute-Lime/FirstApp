@@ -103,7 +103,7 @@ enum MatchResult: Equatable {
 
     var detail: String {
         switch self {
-        case .victory: "王國成功守住了城堡。"
+        case .victory: "王國成功守住城堡。"
         case .defeat: "魔物突破防線，再試一次吧！"
         }
     }
@@ -163,12 +163,14 @@ final class GameState {
             playerCastleHealth = max(0, playerCastleHealth - amount)
             if playerCastleHealth == 0 {
                 result = .defeat
+                AudioManager.shared.stopBattleMusic()
                 AudioManager.shared.play(.defeat)
             }
         case .enemy:
             enemyCastleHealth = max(0, enemyCastleHealth - amount)
             if enemyCastleHealth == 0 {
                 result = .victory
+                AudioManager.shared.stopBattleMusic()
                 AudioManager.shared.play(.victory)
             }
         }

@@ -5,6 +5,9 @@ enum GameSound: String, CaseIterable {
     case buttonTap = "ui_tap"
     case summon = "summon"
     case attack = "attack"
+    case swordAttack = "sword_attack"
+    case bowAttack = "bow_attack"
+    case shieldAttack = "shield_attack"
     case victory = "victory"
     case defeat = "defeat"
 }
@@ -21,6 +24,7 @@ final class AudioManager {
     func startBattleMusic() {
         configureSession()
         if let player = backgroundPlayer {
+            player.currentTime = 0
             if !player.isPlaying {
                 player.play()
             }
@@ -49,6 +53,7 @@ final class AudioManager {
     }
 
     func resumeBattleMusic() {
+        configureSession()
         backgroundPlayer?.play()
     }
 
@@ -66,7 +71,7 @@ final class AudioManager {
 
         do {
             let player = try AVAudioPlayer(contentsOf: url)
-            player.volume = 0.8
+            player.volume = sound == .buttonTap ? 0.6 : 0.85
             player.prepareToPlay()
             player.play()
             

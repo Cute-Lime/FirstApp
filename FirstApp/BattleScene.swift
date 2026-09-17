@@ -48,7 +48,7 @@ final class BattleUnitNode: SKNode {
 
         addChild(bodySprite)
 
-        // Health bar background & fill (adjusted position)
+        // Health bar background & fill
         let healthBackground = SKShapeNode(rectOf: CGSize(width: 44, height: 8), cornerRadius: 4)
         healthBackground.fillColor = .black.withAlphaComponent(0.65)
         healthBackground.strokeColor = .clear
@@ -111,8 +111,8 @@ final class BattleScene: SKScene {
     private var incomeAccumulator: TimeInterval = 0
     private var enemyTargetUnit: UnitType?
 
-    private let playerCastleX: CGFloat = 88
-    private let enemyCastleInset: CGFloat = 88
+    private let playerCastleX: CGFloat = 90
+    private let enemyCastleInset: CGFloat = 90
     private let laneY: CGFloat = 330
 
     private var playerCastleHealthFill: SKShapeNode?
@@ -180,89 +180,98 @@ final class BattleScene: SKScene {
     }
 
     private func buildBattlefield() {
-        // Sky background
+        // 1. Sky Gradient Background (Clean blue sky)
         let sky = SKShapeNode(rectOf: size)
-        sky.fillColor = SKColor(red: 0.18, green: 0.28, blue: 0.42, alpha: 1)
+        sky.fillColor = SKColor(red: 0.32, green: 0.50, blue: 0.72, alpha: 1)
         sky.strokeColor = .clear
         sky.position = CGPoint(x: size.width / 2, y: size.height / 2)
         sky.zPosition = -10
         addChild(sky)
 
-        // Distant mountains / horizon accent
-        let mountains = SKShapeNode(rectOf: CGSize(width: size.width, height: 160))
-        mountains.fillColor = SKColor(red: 0.15, green: 0.22, blue: 0.32, alpha: 1)
-        mountains.strokeColor = .clear
-        mountains.position = CGPoint(x: size.width / 2, y: 380)
-        mountains.zPosition = -9.5
-        addChild(mountains)
+        // Subtle Clouds
+        for (cx, cy, cw) in [(180.0, 620.0, 140.0), (640.0, 650.0, 180.0), (1080.0, 610.0, 150.0)] {
+            let cloud = SKShapeNode(ellipseOf: CGSize(width: cw, height: cw * 0.45))
+            cloud.fillColor = .white.withAlphaComponent(0.18)
+            cloud.strokeColor = .clear
+            cloud.position = CGPoint(x: cx, y: cy)
+            cloud.zPosition = -9.8
+            addChild(cloud)
+        }
 
-        // Green grass at the bottom aligned to the bottom edge of the road
-        let grassHeight = laneY - 55
+        // 2. Distant Hills (Clean, uncluttered, soft green and mountain slate)
+        let mountainHeight: CGFloat = 220
+        let mountain = SKShapeNode(rectOf: CGSize(width: size.width, height: mountainHeight))
+        mountain.fillColor = SKColor(red: 0.22, green: 0.35, blue: 0.38, alpha: 1)
+        mountain.strokeColor = .clear
+        mountain.position = CGPoint(x: size.width / 2, y: laneY + 110)
+        mountain.zPosition = -9.5
+        addChild(mountain)
+
+        let nearHillsHeight: CGFloat = 140
+        let nearHills = SKShapeNode(rectOf: CGSize(width: size.width, height: nearHillsHeight))
+        nearHills.fillColor = SKColor(red: 0.25, green: 0.45, blue: 0.28, alpha: 1)
+        nearHills.strokeColor = .clear
+        nearHills.position = CGPoint(x: size.width / 2, y: laneY + 70)
+        nearHills.zPosition = -9.2
+        addChild(nearHills)
+
+        // 3. Green Meadow Grass Layer under the road
+        let grassHeight = laneY - 50
         let grass = SKShapeNode(rectOf: CGSize(width: size.width, height: grassHeight))
-        grass.fillColor = SKColor(red: 0.18, green: 0.42, blue: 0.24, alpha: 1)
+        grass.fillColor = SKColor(red: 0.20, green: 0.42, blue: 0.22, alpha: 1)
         grass.strokeColor = .clear
         grass.position = CGPoint(x: size.width / 2, y: grassHeight / 2)
         grass.zPosition = -9
         addChild(grass)
 
-        // Straight rectangle road spanning from left edge to right edge (no rounded ellipse)
-        let laneHeight: CGFloat = 110
+        // 4. Natural Medieval Dirt-Stone Road
+        let laneHeight: CGFloat = 100
         let lane = SKShapeNode(rectOf: CGSize(width: size.width, height: laneHeight))
-        lane.fillColor = SKColor(red: 0.58, green: 0.47, blue: 0.33, alpha: 1)
+        lane.fillColor = SKColor(red: 0.48, green: 0.38, blue: 0.28, alpha: 1)
         lane.strokeColor = .clear
         lane.position = CGPoint(x: size.width / 2, y: laneY)
         lane.zPosition = -8
         addChild(lane)
 
-        // Top border line for road (stone / dark wood trim)
-        let topBorder = SKShapeNode(rectOf: CGSize(width: size.width, height: 5))
-        topBorder.fillColor = SKColor(red: 0.38, green: 0.28, blue: 0.18, alpha: 1)
-        topBorder.strokeColor = .clear
-        topBorder.position = CGPoint(x: size.width / 2, y: laneY + (laneHeight / 2) - 2.5)
-        topBorder.zPosition = -7.5
-        addChild(topBorder)
+        // Road Cobblestone & Dirt Accent Pattern
+        for rx in stride(from: 40, to: Int(size.width), by: 70) {
+            let pebble = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 12...22), height: CGFloat.random(in: 6...10)))
+            pebble.fillColor = SKColor(red: 0.38, green: 0.30, blue: 0.22, alpha: 0.45)
+            pebble.strokeColor = .clear
+            pebble.position = CGPoint(x: CGFloat(rx), y: laneY + CGFloat.random(in: -30...30))
+            pebble.zPosition = -7.8
+            addChild(pebble)
+        }
 
-        // Bottom border line for road
-        let bottomBorder = SKShapeNode(rectOf: CGSize(width: size.width, height: 5))
-        bottomBorder.fillColor = SKColor(red: 0.32, green: 0.22, blue: 0.14, alpha: 1)
-        bottomBorder.strokeColor = .clear
-        bottomBorder.position = CGPoint(x: size.width / 2, y: laneY - (laneHeight / 2) + 2.5)
-        bottomBorder.zPosition = -7.5
-        addChild(bottomBorder)
+        // Top & Bottom Road Stone Trim (Subtle border)
+        let topTrim = SKShapeNode(rectOf: CGSize(width: size.width, height: 6))
+        topTrim.fillColor = SKColor(red: 0.30, green: 0.22, blue: 0.15, alpha: 1)
+        topTrim.strokeColor = .clear
+        topTrim.position = CGPoint(x: size.width / 2, y: laneY + (laneHeight / 2) - 3)
+        topTrim.zPosition = -7.5
+        addChild(topTrim)
+
+        let bottomTrim = SKShapeNode(rectOf: CGSize(width: size.width, height: 6))
+        bottomTrim.fillColor = SKColor(red: 0.25, green: 0.18, blue: 0.12, alpha: 1)
+        bottomTrim.strokeColor = .clear
+        bottomTrim.position = CGPoint(x: size.width / 2, y: laneY - (laneHeight / 2) + 3)
+        bottomTrim.zPosition = -7.5
+        addChild(bottomTrim)
 
         addCastle(faction: .player, x: playerCastleX)
         addCastle(faction: .enemy, x: size.width - enemyCastleInset)
     }
 
     private func addCastle(faction: Faction, x: CGFloat) {
-        // Main Castle Body
-        let castle = SKShapeNode(rectOf: CGSize(width: 80, height: 140), cornerRadius: 10)
-        castle.fillColor = faction == .player ? SKColor(red: 0.18, green: 0.35, blue: 0.65, alpha: 1) : SKColor(red: 0.70, green: 0.20, blue: 0.20, alpha: 1)
-        castle.strokeColor = SKColor(red: 0.85, green: 0.72, blue: 0.45, alpha: 1)
-        castle.lineWidth = 3
-        castle.position = CGPoint(x: x, y: laneY + 55)
-        addChild(castle)
+        // Load custom chibi castle sprite
+        let castleName = faction == .player ? "player_castle" : "enemy_castle"
+        let texture = SKTexture(imageNamed: castleName)
+        let castleSprite = SKSpriteNode(texture: texture, size: CGSize(width: 128, height: 160))
+        castleSprite.position = CGPoint(x: x, y: laneY + 58)
+        castleSprite.zPosition = 1
+        addChild(castleSprite)
 
-        // Castle Wall Crenellations (battlements on top)
-        for i in -2...2 {
-            let battlement = SKShapeNode(rectOf: CGSize(width: 12, height: 14), cornerRadius: 2)
-            battlement.fillColor = faction == .player ? SKColor(red: 0.14, green: 0.28, blue: 0.52, alpha: 1) : SKColor(red: 0.55, green: 0.15, blue: 0.15, alpha: 1)
-            battlement.strokeColor = SKColor(red: 0.85, green: 0.72, blue: 0.45, alpha: 0.8)
-            battlement.lineWidth = 1.5
-            battlement.position = CGPoint(x: x + CGFloat(i * 15), y: laneY + 128)
-            addChild(battlement)
-        }
-
-        // Crown Icon
-        let crown = SKLabelNode(text: faction == .player ? "♚" : "♛")
-        crown.fontName = "AvenirNext-Bold"
-        crown.fontSize = 44
-        crown.verticalAlignmentMode = .center
-        crown.position = CGPoint(x: x, y: laneY + 58)
-        crown.zPosition = 1
-        addChild(crown)
-
-        // Castle Health Bar above castle (larger size, only numbers)
+        // Castle Health Bar above castle (clean design)
         let barWidth: CGFloat = 104
         let barHeight: CGFloat = 12
         let healthBg = SKShapeNode(rectOf: CGSize(width: barWidth, height: barHeight), cornerRadius: 6)
@@ -329,7 +338,7 @@ final class BattleScene: SKScene {
 
     private func summonEnemy() {
         guard let gameState else { return }
-        
+
         if enemyTargetUnit == nil {
             let playerUnits = unitNodes(for: .player)
             let enemyUnits = unitNodes(for: .enemy)
@@ -392,14 +401,25 @@ final class BattleScene: SKScene {
         unit.xScale = walkingScale
     }
 
+    private func playSoundForUnitAttack(_ type: UnitType) {
+        Task { @MainActor in
+            switch type {
+            case .knight:
+                AudioManager.shared.play(.swordAttack)
+            case .archer:
+                AudioManager.shared.play(.bowAttack)
+            case .guardian:
+                AudioManager.shared.play(.shieldAttack)
+            }
+        }
+    }
+
     private func attack(_ attacker: BattleUnitNode, target: BattleUnitNode) {
         guard attacker.attackCooldown == 0, !target.isDying else { return }
         attacker.attackCooldown = attacker.type.attackInterval
         attacker.playAttack()
         target.receiveDamage(attacker.type.damage)
-        Task { @MainActor in
-            AudioManager.shared.play(.attack)
-        }
+        playSoundForUnitAttack(attacker.type)
         showHit(at: target.position)
     }
 
@@ -413,9 +433,7 @@ final class BattleScene: SKScene {
         unit.attackCooldown = unit.type.attackInterval
         unit.playAttack()
         gameState.damageCastle(of: unit.faction.opponent, amount: unit.type.damage)
-        Task { @MainActor in
-            AudioManager.shared.play(.attack)
-        }
+        playSoundForUnitAttack(unit.type)
         let castleX = unit.faction == .player ? size.width - enemyCastleInset : playerCastleX
         showHit(at: CGPoint(x: castleX, y: laneY + 30))
     }

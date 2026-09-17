@@ -1,5 +1,6 @@
 import CoreText
 import SwiftUI
+import UIKit
 
 enum GameFont {
     static func registerFonts() {
@@ -15,19 +16,32 @@ enum GameFont {
         }
     }
 
+    private static func fontWithSerifFallback(name: String, weight: UIFont.Weight, size: CGFloat) -> Font {
+        let baseFont = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size, weight: weight)
+        if let serifDescriptor = UIFont.systemFont(ofSize: size, weight: weight).fontDescriptor.withDesign(.serif) {
+            let serifFont = UIFont(descriptor: serifDescriptor, size: size)
+            let cascadedDescriptor = baseFont.fontDescriptor.addingAttributes([
+                .cascadeList: [serifFont.fontDescriptor]
+            ])
+            let combinedUIFont = UIFont(descriptor: cascadedDescriptor, size: size)
+            return Font(combinedUIFont)
+        }
+        return Font(baseFont)
+    }
+
     static func title(_ size: CGFloat) -> Font {
-        .custom("Cinzel-Black", size: size, relativeTo: .largeTitle)
+        fontWithSerifFallback(name: "Cinzel-Black", weight: .black, size: size)
     }
 
     static func display(_ size: CGFloat) -> Font {
-        .custom("Cinzel-Bold", size: size, relativeTo: .title)
+        fontWithSerifFallback(name: "Cinzel-Bold", weight: .bold, size: size)
     }
 
     static func number(_ size: CGFloat) -> Font {
-        .custom("Cinzel-Regular", size: size, relativeTo: .body)
+        fontWithSerifFallback(name: "Cinzel-Regular", weight: .regular, size: size)
     }
 
     static func body(_ size: CGFloat) -> Font {
-        .custom("Cinzel-Regular", size: size, relativeTo: .body)
+        fontWithSerifFallback(name: "Cinzel-Regular", weight: .regular, size: size)
     }
 }

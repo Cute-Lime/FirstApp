@@ -233,7 +233,7 @@ private struct BattleView: View {
                 PauseOverlay(
                     resume: {
                         AudioManager.shared.play(.buttonTap)
-                        gameState.isPaused = false
+                        togglePause()
                     },
                     returnHome: {
                         AudioManager.shared.play(.buttonTap)
