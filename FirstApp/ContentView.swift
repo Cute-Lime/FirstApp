@@ -4,6 +4,7 @@ import SwiftUI
 struct ContentView: View {
     private enum Screen {
         case home
+        case levelSelect
         case battle
     }
 
@@ -16,15 +17,28 @@ struct ContentView: View {
         Group {
             switch screen {
             case .home:
-                HomeView(startGame: startGame)
+                HomeView {
+                    screen = .levelSelect
+                }
+            case .levelSelect:
+                LevelSelectView(
+                    selectedLevel: $gameState.selectedLevel,
+                    startBattle: { level in
+                        startGame(level: level)
+                    },
+                    backToHome: {
+                        screen = .home
+                    }
+                )
             case .battle:
                 BattleView(
                     gameState: gameState,
                     scene: battleScene,
                     roundID: roundID,
                     summon: summon,
+                    upgradeEconomy: upgradeEconomy,
                     togglePause: togglePause,
-                    restart: startGame,
+                    restart: restartCurrentGame,
                     returnHome: returnHome
                 )
             }
@@ -32,10 +46,14 @@ struct ContentView: View {
         .preferredColorScheme(.dark)
     }
 
-    private func startGame() {
+    private func startGame(level: GameLevel) {
         battleScene?.tearDown()
-        gameState.reset()
-        battleScene = BattleScene(size: CGSize(width: 1_280, height: 720), gameState: gameState)
+        gameState.reset(for: level)
+        battleScene = BattleScene(
+            size: CGSize(width: 1_280, height: 720),
+            gameState: gameState,
+            level: level
+        )
         roundID = UUID()
         screen = .battle
         AudioManager.shared.play(.buttonTap)
@@ -44,6 +62,15 @@ struct ContentView: View {
 
     private func summon(_ type: UnitType) {
         battleScene?.summonPlayer(type)
+    }
+
+    private func upgradeEconomy() {
+        guard gameState.upgradeEconomy() else { return }
+        AudioManager.shared.play(.summon)
+    }
+
+    private func restartCurrentGame() {
+        startGame(level: gameState.selectedLevel)
     }
 
     private func togglePause() {
@@ -63,8 +90,9 @@ struct ContentView: View {
     }
 }
 
+// MARK: - 1. 首頁 (HomeView)
 private struct HomeView: View {
-    let startGame: () -> Void
+    let goToLevelSelect: () -> Void
 
     var body: some View {
         ZStack {
@@ -87,14 +115,15 @@ private struct HomeView: View {
                 .blur(radius: 50)
                 .offset(y: -40)
 
-            VStack(spacing: 24) {
+            VStack(spacing: 28) {
                 Spacer()
+                    .frame(minHeight: 26)
 
                 // Medieval Castle Crest Emblem
                 ZStack {
                     Circle()
                         .fill(Color(red: 0.15, green: 0.12, blue: 0.10))
-                        .frame(width: 120, height: 120)
+                        .frame(width: 130, height: 130)
                         .overlay(
                             Circle()
                                 .stroke(
@@ -106,14 +135,14 @@ private struct HomeView: View {
                                     lineWidth: 4
                                 )
                         )
-                        .shadow(color: .orange.opacity(0.3), radius: 12)
+                        .shadow(color: .orange.opacity(0.3), radius: 14)
 
                     VStack(spacing: -6) {
                         Image(systemName: "crown.fill")
-                            .font(.system(size: 28))
+                            .font(.system(size: 32))
                             .foregroundStyle(Color(red: 0.98, green: 0.84, blue: 0.38))
                         Image(systemName: "shield.fill")
-                            .font(.system(size: 42))
+                            .font(.system(size: 46))
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: [Color(red: 0.75, green: 0.20, blue: 0.15), Color(red: 0.45, green: 0.10, blue: 0.08)],
@@ -124,7 +153,7 @@ private struct HomeView: View {
                     }
                 }
 
-                VStack(spacing: 6) {
+                VStack(spacing: 8) {
                     Text("TOWER DEFENCE")
                         .font(GameFont.title(44))
                         .foregroundStyle(
@@ -137,27 +166,179 @@ private struct HomeView: View {
                         .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 3)
 
                     Text("中世紀城堡爭霸戰")
-                        .font(GameFont.display(22))
+                        .font(GameFont.display(24))
                         .foregroundStyle(Color(red: 0.95, green: 0.78, blue: 0.35))
 
                     Text("領兵築防 • 決戰魔王")
-                        .font(GameFont.body(15))
+                        .font(GameFont.body(16))
                         .foregroundStyle(.white.opacity(0.78))
                         .padding(.top, 2)
                 }
 
                 Button(action: {
                     AudioManager.shared.play(.buttonTap)
-                    startGame()
+                    goToLevelSelect()
+                }) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "play.circle.fill")
+                            .font(.title2)
+                        Text("開始遊戲")
+                            .font(GameFont.display(22))
+                    }
+                    .foregroundStyle(Color(red: 0.98, green: 0.92, blue: 0.70))
+                    .frame(minWidth: 240)
+                    .padding(.vertical, 16)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(red: 0.68, green: 0.22, blue: 0.15), Color(red: 0.45, green: 0.12, blue: 0.08)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        in: RoundedRectangle(cornerRadius: 16)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color(red: 0.95, green: 0.82, blue: 0.45), Color(red: 0.65, green: 0.48, blue: 0.20)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 2.5
+                            )
+                    )
+                    .shadow(color: Color.orange.opacity(0.4), radius: 12, x: 0, y: 5)
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+            }
+            .padding()
+        }
+    }
+}
+
+// MARK: - 2. 關卡選擇畫面 (LevelSelectView)
+private struct LevelSelectView: View {
+    @Binding var selectedLevel: GameLevel
+    let startBattle: (GameLevel) -> Void
+    let backToHome: () -> Void
+
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.08, green: 0.10, blue: 0.15),
+                    Color(red: 0.14, green: 0.08, blue: 0.12),
+                    Color(red: 0.06, green: 0.07, blue: 0.10)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 24) {
+                // Header Bar
+                HStack {
+                    Button(action: {
+                        AudioManager.shared.play(.buttonTap)
+                        backToHome()
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chevron.left")
+                                .font(.body.bold())
+                            Text("返回首頁")
+                                .font(GameFont.display(15))
+                        }
+                        .foregroundStyle(Color(red: 0.90, green: 0.80, blue: 0.55))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Color.black.opacity(0.4), in: Capsule())
+                        .overlay(Capsule().stroke(Color(red: 0.75, green: 0.60, blue: 0.32), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+
+                    Spacer()
+
+                    Text("選擇關卡")
+                        .font(GameFont.title(26))
+                        .foregroundStyle(Color(red: 0.98, green: 0.88, blue: 0.55))
+
+                    Spacer()
+
+                    Color.clear.frame(width: 90, height: 32)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 34)
+
+                Spacer()
+
+                // Level Cards
+                HStack(spacing: 16) {
+                    ForEach(GameLevel.allCases) { level in
+                        Button {
+                            selectedLevel = level
+                            AudioManager.shared.play(.buttonTap)
+                        } label: {
+                            VStack(spacing: 12) {
+                                Image(systemName: level.tintName)
+                                    .font(.system(size: 36))
+                                    .foregroundStyle(selectedLevel == level ? Color(red: 0.98, green: 0.84, blue: 0.38) : .gray)
+
+                                Text(level.title)
+                                    .font(GameFont.display(17))
+                                    .foregroundStyle(selectedLevel == level ? Color(red: 0.98, green: 0.90, blue: 0.65) : .white.opacity(0.85))
+
+                                Text(level.subtitle)
+                                    .font(GameFont.body(13))
+                                    .foregroundStyle(.white.opacity(0.65))
+                                    .multilineTextAlignment(.center)
+                                    .frame(height: 38)
+                            }
+                            .padding(18)
+                            .frame(width: 190, height: 180)
+                            .background(
+                                selectedLevel == level ?
+                                LinearGradient(
+                                    colors: [Color(red: 0.55, green: 0.20, blue: 0.12), Color(red: 0.35, green: 0.10, blue: 0.08)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ) :
+                                LinearGradient(
+                                    colors: [Color(red: 0.15, green: 0.14, blue: 0.14), Color(red: 0.09, green: 0.09, blue: 0.09)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                in: RoundedRectangle(cornerRadius: 18)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 18)
+                                    .stroke(
+                                        selectedLevel == level ? Color(red: 0.95, green: 0.82, blue: 0.45) : .white.opacity(0.18),
+                                        lineWidth: selectedLevel == level ? 2.5 : 1
+                                    )
+                            )
+                            .shadow(color: selectedLevel == level ? Color.orange.opacity(0.35) : Color.clear, radius: 10)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                Spacer()
+
+                // Embark Button
+                Button(action: {
+                    AudioManager.shared.play(.buttonTap)
+                    startBattle(selectedLevel)
                 }) {
                     HStack(spacing: 10) {
                         Text("🗡️")
                             .font(.title2)
-                        Text("開始遠征")
+                        Text("出征（\(selectedLevel.title)）")
                             .font(GameFont.display(20))
                     }
                     .foregroundStyle(Color(red: 0.98, green: 0.92, blue: 0.70))
-                    .frame(minWidth: 220)
+                    .frame(minWidth: 260)
                     .padding(.vertical, 14)
                     .background(
                         LinearGradient(
@@ -181,20 +362,19 @@ private struct HomeView: View {
                     .shadow(color: Color.orange.opacity(0.35), radius: 10, x: 0, y: 4)
                 }
                 .buttonStyle(.plain)
-                .accessibilityHint("開始一場新的塔防戰鬥")
-
-                Spacer()
+                .padding(.bottom, 28)
             }
-            .padding()
         }
     }
 }
 
+// MARK: - 3. 戰鬥畫面 (BattleView)
 private struct BattleView: View {
     let gameState: GameState
     let scene: BattleScene?
     let roundID: UUID
     let summon: (UnitType) -> Void
+    let upgradeEconomy: () -> Void
     let togglePause: () -> Void
     let restart: () -> Void
     let returnHome: () -> Void
@@ -212,7 +392,13 @@ private struct BattleView: View {
             VStack(spacing: 0) {
                 BattleHeader(
                     money: gameState.playerMoney,
+                    levelTitle: gameState.selectedLevel.title,
+                    economyLevel: gameState.economyLevel,
+                    incomeRate: gameState.playerIncomeRate,
+                    upgradeCost: gameState.nextEconomyUpgradeCost,
                     isPaused: gameState.isPaused,
+                    isFinished: gameState.isFinished,
+                    upgradeEconomy: upgradeEconomy,
                     togglePause: togglePause
                 )
 
@@ -259,15 +445,39 @@ private struct BattleView: View {
     }
 }
 
+// MARK: - 頂部狀態列 (BattleHeader)
 private struct BattleHeader: View {
     let money: Int
+    let levelTitle: String
+    let economyLevel: Int
+    let incomeRate: Double
+    let upgradeCost: Int?
     let isPaused: Bool
+    let isFinished: Bool
+    let upgradeEconomy: () -> Void
     let togglePause: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
+            Text(levelTitle)
+                .font(GameFont.display(14))
+                .foregroundStyle(Color(red: 0.98, green: 0.88, blue: 0.55))
+
+            Spacer(minLength: 4)
+
+            // Money Badge (Height: 44)
             MoneyBadge(money: money)
 
+            // Economy Upgrade Button (Height: 44, Unified Style & Wider Width)
+            EconomyUpgradeButton(
+                economyLevel: economyLevel,
+                incomeRate: incomeRate,
+                upgradeCost: upgradeCost,
+                isDisabled: isPaused || isFinished || (upgradeCost.map { money < $0 } ?? true),
+                upgradeEconomy: upgradeEconomy
+            )
+
+            // Pause Button (Height: 44)
             Button(action: {
                 AudioManager.shared.play(.buttonTap)
                 togglePause()
@@ -278,7 +488,7 @@ private struct BattleHeader: View {
                     .frame(width: 44, height: 44)
                     .background(
                         LinearGradient(
-                            colors: [Color(red: 0.22, green: 0.18, blue: 0.15), Color(red: 0.12, green: 0.10, blue: 0.08)],
+                            colors: [Color(red: 0.20, green: 0.16, blue: 0.12), Color(red: 0.10, green: 0.08, blue: 0.06)],
                             startPoint: .top,
                             endPoint: .bottom
                         ),
@@ -300,23 +510,81 @@ private struct MoneyBadge: View {
 
     var body: some View {
         Label("\(money)", systemImage: "centsign.circle.fill")
-            .font(GameFont.number(20))
+            .font(GameFont.number(18))
             .foregroundStyle(Color(red: 0.98, green: 0.86, blue: 0.40))
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 14)
+            .frame(height: 44)
             .background(
                 LinearGradient(
                     colors: [Color(red: 0.20, green: 0.16, blue: 0.12), Color(red: 0.10, green: 0.08, blue: 0.06)],
                     startPoint: .top,
                     endPoint: .bottom
                 ),
-                in: Capsule()
+                in: RoundedRectangle(cornerRadius: 12)
             )
             .overlay(
-                Capsule()
+                RoundedRectangle(cornerRadius: 12)
                     .stroke(Color(red: 0.75, green: 0.60, blue: 0.32), lineWidth: 1.5)
             )
             .accessibilityLabel("金錢 \(money)")
+    }
+}
+
+private struct EconomyUpgradeButton: View {
+    let economyLevel: Int
+    let incomeRate: Double
+    let upgradeCost: Int?
+    let isDisabled: Bool
+    let upgradeEconomy: () -> Void
+
+    var body: some View {
+        Button {
+            upgradeEconomy()
+        } label: {
+            VStack(spacing: 2) {
+                Text("城堡 Lv.\(economyLevel)")
+                    .font(GameFont.display(12))
+                    .foregroundStyle(Color(red: 0.98, green: 0.92, blue: 0.75))
+
+                HStack(spacing: 4) {
+                    Text("+\(Int(incomeRate))/秒")
+                        .font(GameFont.number(11))
+                        .foregroundStyle(Color(red: 0.98, green: 0.86, blue: 0.40))
+
+                    if let upgradeCost {
+                        Text("(\(upgradeCost)金)")
+                            .font(.caption2)
+                            .foregroundStyle(.white.opacity(0.8))
+                    } else {
+                        Text("(滿級)")
+                            .font(.caption2)
+                            .foregroundStyle(.gray)
+                    }
+                }
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 44)
+            .frame(minWidth: 125)
+            .background(
+                LinearGradient(
+                    colors: [Color(red: 0.20, green: 0.16, blue: 0.12), Color(red: 0.10, green: 0.08, blue: 0.06)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ),
+                in: RoundedRectangle(cornerRadius: 12)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                        isDisabled ? Color.gray.opacity(0.35) : Color(red: 0.75, green: 0.60, blue: 0.32),
+                        lineWidth: 1.5
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.55 : 1.0)
+        .accessibilityLabel(upgradeCost == nil ? "城堡經濟已升至最高等級" : "升級城堡經濟")
     }
 }
 
@@ -428,7 +696,7 @@ private struct PauseOverlay: View {
                     .buttonStyle(.plain)
 
                     Button(action: returnHome) {
-                        Text("返回主頁")
+                        Text("返回首頁")
                             .font(GameFont.display(18))
                             .foregroundStyle(.white.opacity(0.85))
                             .frame(minWidth: 160)
@@ -492,7 +760,7 @@ private struct ResultOverlay: View {
                         .buttonStyle(.plain)
 
                         Button(action: returnHome) {
-                            Text("返回主頁")
+                            Text("返回首頁")
                                 .font(GameFont.display(18))
                                 .foregroundStyle(.white.opacity(0.85))
                                 .padding(.horizontal, 20)

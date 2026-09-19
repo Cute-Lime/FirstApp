@@ -10,6 +10,62 @@ enum Faction: Equatable {
     }
 }
 
+enum GameLevel: Int, CaseIterable, Identifiable, Equatable {
+    case frontier = 1
+    case highlands
+    case citadel
+
+    var id: Int { rawValue }
+
+    var title: String {
+        switch self {
+        case .frontier: "第一關・綠野前線"
+        case .highlands: "第二關・峽谷伏擊"
+        case .citadel: "第三關・魔王城門"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .frontier: "熟悉部隊與城堡經濟"
+        case .highlands: "敵軍更常派出遠程單位"
+        case .citadel: "守住強大且富裕的魔物軍團"
+        }
+    }
+
+    var enemyIncomeRate: Double {
+        switch self {
+        case .frontier: 14
+        case .highlands: 20
+        case .citadel: 28
+        }
+    }
+
+    var enemySpawnInterval: ClosedRange<TimeInterval> {
+        switch self {
+        case .frontier: 3.5...5.5
+        case .highlands: 2.8...4.2
+        case .citadel: 2.2...3.5
+        }
+    }
+
+    var enemyUnitWeights: [(UnitType, Int)] {
+        switch self {
+        case .frontier: [(.knight, 50), (.archer, 30), (.guardian, 20)]
+        case .highlands: [(.knight, 30), (.archer, 48), (.guardian, 22)]
+        case .citadel: [(.knight, 30), (.archer, 28), (.guardian, 42)]
+        }
+    }
+
+    var tintName: String {
+        switch self {
+        case .frontier: "leaf.fill"
+        case .highlands: "mountain.2.fill"
+        case .citadel: "flame.fill"
+        }
+    }
+}
+
 enum UnitType: String, CaseIterable, Identifiable {
     case knight
     case archer
@@ -30,14 +86,6 @@ enum UnitType: String, CaseIterable, Identifiable {
         case .knight: "🗡️"
         case .archer: "🏹"
         case .guardian: "🛡️"
-        }
-    }
-
-    var symbolName: String {
-        switch self {
-        case .knight: "🗡️"
-        case .archer: "scope"
-        case .guardian: "shield.fill"
         }
     }
 
@@ -112,20 +160,49 @@ enum MatchResult: Equatable {
 @MainActor
 @Observable
 final class GameState {
-    var playerMoney = 100
-    var enemyMoney = 100
-    var playerCastleHealth: CGFloat = 1_500
-    var enemyCastleHealth: CGFloat = 1_500
+    // Castle Health cut in half for faster & balanced matches
+    static let castleHealth: CGFloat = 800
+    static let maximumEconomyLevel = 5
+
+    var selectedLevel: GameLevel = .frontier
+    var playerMoney = 150
+    var enemyMoney = 150
+    var playerCastleHealth: CGFloat = castleHealth
+    var enemyCastleHealth: CGFloat = castleHealth
+    var economyLevel = 1
     var isPaused = false
     var result: MatchResult?
 
+    private var playerIncomeRemainder = 0.0
+    private var enemyIncomeRemainder = 0.0
+
     var isFinished: Bool { result != nil }
 
-    func reset() {
-        playerMoney = 100
-        enemyMoney = 100
-        playerCastleHealth = 1_500
-        enemyCastleHealth = 1_500
+    // Money generation rate doubled!
+    var playerIncomeRate: Double {
+        switch economyLevel {
+        case 1: 16
+        case 2: 24
+        case 3: 34
+        case 4: 46
+        default: 60
+        }
+    }
+
+    var nextEconomyUpgradeCost: Int? {
+        guard economyLevel < Self.maximumEconomyLevel else { return nil }
+        return [100, 170, 260, 380][economyLevel - 1]
+    }
+
+    func reset(for level: GameLevel) {
+        selectedLevel = level
+        playerMoney = 150
+        enemyMoney = 150
+        playerCastleHealth = Self.castleHealth
+        enemyCastleHealth = Self.castleHealth
+        economyLevel = 1
+        playerIncomeRemainder = 0
+        enemyIncomeRemainder = 0
         isPaused = false
         result = nil
     }
@@ -147,12 +224,28 @@ final class GameState {
         return true
     }
 
+    func upgradeEconomy() -> Bool {
+        guard let cost = nextEconomyUpgradeCost, playerMoney >= cost, !isPaused, !isFinished else {
+            return false
+        }
+        playerMoney -= cost
+        economyLevel += 1
+        return true
+    }
+
     func addIncome(seconds: TimeInterval) {
         guard !isPaused, !isFinished else { return }
-        let income = Int((seconds * 12).rounded(.down))
-        guard income > 0 else { return }
-        playerMoney = min(999, playerMoney + income)
-        enemyMoney = min(999, enemyMoney + income)
+
+        playerIncomeRemainder += seconds * playerIncomeRate
+        enemyIncomeRemainder += seconds * selectedLevel.enemyIncomeRate
+
+        let playerIncome = Int(playerIncomeRemainder.rounded(.down))
+        let enemyIncome = Int(enemyIncomeRemainder.rounded(.down))
+        playerIncomeRemainder -= Double(playerIncome)
+        enemyIncomeRemainder -= Double(enemyIncome)
+
+        playerMoney = min(999, playerMoney + playerIncome)
+        enemyMoney = min(999, enemyMoney + enemyIncome)
     }
 
     func damageCastle(of faction: Faction, amount: CGFloat) {
